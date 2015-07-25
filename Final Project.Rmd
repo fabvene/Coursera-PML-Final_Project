@@ -48,12 +48,9 @@ inTrain <- createDataPartition(training$classe, p=0.80, list=F)
 trainData <- training[inTrain, ]
 testData <- training[-inTrain, ]
 
-modFit <- train(classe~.,data=trainData, method="rf")
-#modFit <- grow.forest(classe~.,data=trainData)
+modFit <- train(classe~.,data=trainData, method="rf", trControl = trainControl(method = "cv"), ntree=200)
 
-# controlRf <- trainControl(method="cv", 5)
-# modelRf <- train(classe ~ ., data=trainData, method="rf", trControl=controlRf, ntree=250)
-# modelRf
+
 
 ```
 
