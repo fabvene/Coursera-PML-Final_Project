@@ -1,0 +1,73 @@
+---
+title: "Final Project"
+author: "Fabrizio Veneziano"
+date: "Thursday, July 16, 2015"
+output: html_document
+---
+
+##Getting the data
+
+The training data set can be found on the following URL:
+
+```{r LoadTrain, cache=TRUE}
+trainUrl <- read.csv("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+
+```
+
+
+The testing data set can be found on the following URL:
+
+```{r LoadTest, cache=TRUE}
+
+testUrl <- read.csv("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+```
+
+
+```{r CleanUp}
+
+names(trainUrl)
+
+training <- trainUrl[,c(8:160)]
+
+names(testUrl)
+
+tests20 <- testUrl[,c(8:160)]
+
+
+training <- na.omit(training)
+
+```
+
+```{r ModelFit}
+library(caret)
+library(ParallelForest)
+
+set.seed(1234) 
+inTrain <- createDataPartition(training$classe, p=0.80, list=F)
+trainData <- training[inTrain, ]
+testData <- training[-inTrain, ]
+
+modFit <- train(classe~.,data=trainData, method="rf")
+#modFit <- grow.forest(classe~.,data=trainData)
+
+# controlRf <- trainControl(method="cv", 5)
+# modelRf <- train(classe ~ ., data=trainData, method="rf", trControl=controlRf, ntree=250)
+# modelRf
+
+```
+
+
+```{r Predict}
+
+predictions <- predict(modFit, testData)
+confusionMatrix(testData$classe, predictions)
+
+accuracy <- postResample(predictions, testData$classe)
+accuracy
+
+oose <- 1 - as.numeric(confusionMatrix(testData$classe, predictions)$overall[1])
+oose
+
+```
+
