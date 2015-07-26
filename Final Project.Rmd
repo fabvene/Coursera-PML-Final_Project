@@ -35,13 +35,28 @@ names(testUrl)
 tests20 <- testUrl[,c(8:160)]
 
 
-training <- na.omit(training)
+training <- training[, colSums(is.na(training)) == 0] 
+tests20 <- tests20[, colSums(is.na(tests20)) == 0] 
+
+#training <- na.omit(training)
 
 ```
+
+
+```{r RattelFit}
+
+library(rattle)
+
+rattle()
+
+```
+
+
 
 ```{r ModelFit}
 library(caret)
 library(ParallelForest)
+
 
 set.seed(1234) 
 inTrain <- createDataPartition(training$classe, p=0.80, list=F)
