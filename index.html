@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Coursera-pml-final project by fabvene</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Coursera-pml-final project</h1>
+      <h2 class="project-tagline"></h2>
+      <a href="https://github.com/fabvene/Coursera-PML-Final_Project" class="btn">View on GitHub</a>
+      <a href="https://github.com/fabvene/Coursera-PML-Final_Project/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/fabvene/Coursera-PML-Final_Project/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <hr>
+
+<p>title: "Final Project"
+author: "Fabrizio Veneziano"
+date: "Thursday, July 16, 2015"</p>
+
+<h2>
+<a id="output-html_document" class="anchor" href="#output-html_document" aria-hidden="true"><span class="octicon octicon-link"></span></a>output: html_document</h2>
+
+<h2>
+<a id="getting-the-data" class="anchor" href="#getting-the-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting the data</h2>
+
+<p>The training data set can be found on the following URL:</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">trainUrl</span> <span class="pl-k">&lt;-</span> read.csv(<span class="pl-s"><span class="pl-pds">"</span>http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv<span class="pl-pds">"</span></span>)
+</pre></div>
+
+<p>The testing data set can be found on the following URL:</p>
+
+<div class="highlight highlight-r"><pre>
+<span class="pl-smi">testUrl</span> <span class="pl-k">&lt;-</span> read.csv(<span class="pl-s"><span class="pl-pds">"</span>http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv<span class="pl-pds">"</span></span>)
+</pre></div>
+
+<h2>
+<a id="data-cleanup" class="anchor" href="#data-cleanup" aria-hidden="true"><span class="octicon octicon-link"></span></a>Data CleanUp</h2>
+
+<p>Before proceedeing with the model-bulding section, we take a look at the variables of both data set and remove the ones which we deem irrelevant to our predictions ("user", etc.), and also get rid of columns containing NAs: we are planning to use the Rattle/RandomForest method to build our model, and Rby experience we know it doesn't handle NAs very well.<br>
+We also recode variables and tur them into numeric ones (this step could also be performed in Rattle, but it would add new variable names, making the model inconsistent with the Test set).  </p>
+
+<div class="highlight highlight-r"><pre>
+<span class="pl-c"># names(trainUrl)</span>
+<span class="pl-c"># names(testUrl)</span>
+
+<span class="pl-smi">training</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">trainUrl</span>[,c(<span class="pl-c1">8</span><span class="pl-k">:</span><span class="pl-c1">160</span>)]
+<span class="pl-smi">classe</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">training</span><span class="pl-k">$</span><span class="pl-smi">classe</span>
+<span class="pl-smi">training</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">training</span>[, sapply(<span class="pl-smi">training</span>, <span class="pl-smi">is.numeric</span>)]
+<span class="pl-smi">training</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">training</span>[, colSums(is.na(<span class="pl-smi">training</span>)) <span class="pl-k">==</span> <span class="pl-c1">0</span>] 
+
+<span class="pl-smi">training</span> <span class="pl-k">&lt;-</span> cbind(<span class="pl-smi">training</span>,<span class="pl-smi">classe</span>)
+
+<span class="pl-smi">finalTest</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">testUrl</span>[,c(<span class="pl-c1">8</span><span class="pl-k">:</span><span class="pl-c1">160</span>)]
+<span class="pl-smi">finalTest</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">finalTest</span>[,sapply(<span class="pl-smi">finalTest</span>, <span class="pl-smi">is.numeric</span>)]
+<span class="pl-smi">finalTest</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">finalTest</span>[, colSums(is.na(<span class="pl-smi">finalTest</span>)) <span class="pl-k">==</span> <span class="pl-c1">0</span>] 
+
+
+</pre></div>
+
+<h2>
+<a id="model-building-with-randomforest-and-rattle-package" class="anchor" href="#model-building-with-randomforest-and-rattle-package" aria-hidden="true"><span class="octicon octicon-link"></span></a>Model building with RandomForest and Rattle package</h2>
+
+<p>The Rattle package/GUI makes it easier to visualize the model building process and has some useful built-in functions to 'tweak', analyze and optimize the model.  </p>
+
+<p>Its output is very informative, although somewhat verbose:</p>
+
+<div class="highlight highlight-r"><pre>
+library(<span class="pl-smi">rattle</span>)
+
+<span class="pl-c">#rattle()</span>
+
+
+<span class="pl-c"># Rattle output</span>
+
+
+<span class="pl-c"># A pre-defined value is used to reset the random seed so that results are repeatable.</span>
+
+<span class="pl-smi">crv</span><span class="pl-k">$</span><span class="pl-smi">seed</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">42</span> 
+
+
+
+<span class="pl-c"># Load our R data frame.</span>
+
+<span class="pl-smi">pml_dataset</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">training</span></pre></div>
+
+<h3>
+<a id="build-the-trainingvalidatetest-datasets" class="anchor" href="#build-the-trainingvalidatetest-datasets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build the training/validate/test datasets</h3>
+
+<p>For the cross-validation we split the training set in 80-20.  </p>
+
+<div class="highlight highlight-r"><pre>
+set.seed(<span class="pl-smi">crv</span><span class="pl-k">$</span><span class="pl-smi">seed</span>) 
+<span class="pl-smi">pml_nobs</span> <span class="pl-k">&lt;-</span> nrow(<span class="pl-smi">pml_dataset</span>) <span class="pl-c"># 19622 observations </span>
+<span class="pl-smi">pml_sample</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">pml_train</span> <span class="pl-k">&lt;-</span> sample(nrow(<span class="pl-smi">pml_dataset</span>), <span class="pl-c1">0.8</span><span class="pl-k">*</span><span class="pl-smi">pml_nobs</span>) <span class="pl-c"># 15697 observations</span>
+<span class="pl-smi">pml_validate</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">NULL</span>
+<span class="pl-smi">pml_test</span> <span class="pl-k">&lt;-</span> setdiff(setdiff(seq_len(nrow(<span class="pl-smi">pml_dataset</span>)), <span class="pl-smi">pml_train</span>), <span class="pl-smi">pml_validate</span>) <span class="pl-c"># 3925 observations</span>
+
+<span class="pl-c"># The following variable selections have been noted.</span>
+
+<span class="pl-smi">pml_input</span> <span class="pl-k">&lt;-</span> c(<span class="pl-s"><span class="pl-pds">"</span>roll_belt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>pitch_belt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>yaw_belt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>total_accel_belt<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>gyros_belt_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_belt_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_belt_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_belt_x<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>accel_belt_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_belt_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_belt_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_belt_y<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>magnet_belt_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>roll_arm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>pitch_arm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>yaw_arm<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>total_accel_arm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_arm_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_arm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_arm_z<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>accel_arm_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_arm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_arm_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_arm_x<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>magnet_arm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_arm_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>roll_dumbbell<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>pitch_dumbbell<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>yaw_dumbbell<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>total_accel_dumbbell<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_dumbbell_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_dumbbell_y<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>gyros_dumbbell_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_dumbbell_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_dumbbell_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_dumbbell_z<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>magnet_dumbbell_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_dumbbell_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_dumbbell_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>roll_forearm<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>pitch_forearm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>yaw_forearm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>total_accel_forearm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_forearm_x<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>gyros_forearm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_forearm_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_forearm_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_forearm_y<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>accel_forearm_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_forearm_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_forearm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_forearm_z<span class="pl-pds">"</span></span>)
+
+<span class="pl-smi">pml_numeric</span> <span class="pl-k">&lt;-</span> c(<span class="pl-s"><span class="pl-pds">"</span>roll_belt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>pitch_belt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>yaw_belt<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>total_accel_belt<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>gyros_belt_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_belt_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_belt_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_belt_x<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>accel_belt_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_belt_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_belt_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_belt_y<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>magnet_belt_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>roll_arm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>pitch_arm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>yaw_arm<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>total_accel_arm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_arm_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_arm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_arm_z<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>accel_arm_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_arm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_arm_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_arm_x<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>magnet_arm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_arm_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>roll_dumbbell<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>pitch_dumbbell<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>yaw_dumbbell<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>total_accel_dumbbell<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_dumbbell_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_dumbbell_y<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>gyros_dumbbell_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_dumbbell_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_dumbbell_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_dumbbell_z<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>magnet_dumbbell_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_dumbbell_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_dumbbell_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>roll_forearm<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>pitch_forearm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>yaw_forearm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>total_accel_forearm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_forearm_x<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>gyros_forearm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>gyros_forearm_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_forearm_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>accel_forearm_y<span class="pl-pds">"</span></span>,
+     <span class="pl-s"><span class="pl-pds">"</span>accel_forearm_z<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_forearm_x<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_forearm_y<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>magnet_forearm_z<span class="pl-pds">"</span></span>)
+
+<span class="pl-smi">pml_categoric</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">NULL</span>
+
+<span class="pl-smi">pml_target</span>  <span class="pl-k">&lt;-</span> <span class="pl-s"><span class="pl-pds">"</span>classe<span class="pl-pds">"</span></span>
+<span class="pl-smi">pml_risk</span>    <span class="pl-k">&lt;-</span> <span class="pl-c1">NULL</span>
+<span class="pl-smi">pml_ident</span>   <span class="pl-k">&lt;-</span> <span class="pl-c1">NULL</span>
+<span class="pl-smi">pml_ignore</span>  <span class="pl-k">&lt;-</span> <span class="pl-c1">NULL</span>
+<span class="pl-smi">pml_weights</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">NULL</span>
+</pre></div>
+
+<h3>
+<a id="random-forest-model" class="anchor" href="#random-forest-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>Random Forest Model</h3>
+
+<p>We load the randomForest package and proceed to build our model using 500 trees and 7 variables tried at each split.  </p>
+
+<div class="highlight highlight-r"><pre><span class="pl-c"># The 'randomForest' package provides the 'randomForest' function.</span>
+
+library(<span class="pl-smi">randomForest</span>, <span class="pl-v">quietly</span><span class="pl-k">=</span><span class="pl-c1">TRUE</span>)
+
+<span class="pl-c"># Build the Random Forest model.</span>
+
+set.seed(<span class="pl-smi">crv</span><span class="pl-k">$</span><span class="pl-smi">seed</span>)
+<span class="pl-smi">pml_rf</span> <span class="pl-k">&lt;-</span> <span class="pl-e">randomForest</span><span class="pl-k">::</span>randomForest(<span class="pl-smi">classe</span> <span class="pl-k">~</span> .,
+      <span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">pml_dataset</span>[<span class="pl-smi">pml_sample</span>,c(<span class="pl-smi">pml_input</span>, <span class="pl-smi">pml_target</span>)], 
+      <span class="pl-v">ntree</span><span class="pl-k">=</span><span class="pl-c1">500</span>,
+      <span class="pl-v">mtry</span><span class="pl-k">=</span><span class="pl-c1">7</span>,
+      <span class="pl-v">importance</span><span class="pl-k">=</span><span class="pl-c1">TRUE</span>,
+      <span class="pl-v">na.action</span><span class="pl-k">=</span><span class="pl-e">randomForest</span><span class="pl-k">::</span><span class="pl-smi">na.roughfix</span>,
+      <span class="pl-v">replace</span><span class="pl-k">=</span><span class="pl-c1">FALSE</span>)
+
+<span class="pl-c"># Generate textual output of 'Random Forest' model.</span>
+
+<span class="pl-smi">pml_rf</span>
+
+</pre></div>
+
+<p>The OOB estimate of  error rate (0.41%) is very encouraging and so is the confusion matrix on the training set. We therefore move on to check the performance of our mdel on our cross-validated test-set.  </p>
+
+<h3>
+<a id="evaluate-model-performance" class="anchor" href="#evaluate-model-performance" aria-hidden="true"><span class="octicon octicon-link"></span></a>Evaluate model performance.</h3>
+
+<div class="highlight highlight-r"><pre>
+<span class="pl-c"># Generate an Error Matrix for the Random Forest model.</span>
+
+<span class="pl-c"># Obtain the response from the Random Forest model.</span>
+
+<span class="pl-smi">pml_pr</span> <span class="pl-k">&lt;-</span> predict(<span class="pl-smi">pml_rf</span>, <span class="pl-v">newdata</span><span class="pl-k">=</span>na.omit(<span class="pl-smi">pml_dataset</span>[<span class="pl-smi">pml_test</span>, c(<span class="pl-smi">pml_input</span>, <span class="pl-smi">pml_target</span>)]))
+
+<span class="pl-c"># Generate the confusion matrix showing counts.</span>
+
+table(na.omit(<span class="pl-smi">pml_dataset</span>[<span class="pl-smi">pml_test</span>, c(<span class="pl-smi">pml_input</span>, <span class="pl-smi">pml_target</span>)])<span class="pl-k">$</span><span class="pl-smi">classe</span>, <span class="pl-smi">pml_pr</span>,
+        <span class="pl-v">dnn</span><span class="pl-k">=</span>c(<span class="pl-s"><span class="pl-pds">"</span>Actual<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Predicted<span class="pl-pds">"</span></span>))
+
+library(<span class="pl-smi">caret</span>)
+
+<span class="pl-smi">accuracy</span> <span class="pl-k">&lt;-</span> postResample(<span class="pl-smi">pml_pr</span>, <span class="pl-smi">pml_dataset</span>[<span class="pl-smi">pml_test</span>, c(<span class="pl-smi">pml_input</span>, <span class="pl-smi">pml_target</span>)]<span class="pl-k">$</span><span class="pl-smi">classe</span>)
+<span class="pl-smi">accuracy</span>
+<span class="pl-smi">error</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">1</span> <span class="pl-k">-</span> as.numeric(confusionMatrix(<span class="pl-smi">pml_dataset</span>[<span class="pl-smi">pml_test</span>, c(<span class="pl-smi">pml_input</span>, <span class="pl-smi">pml_target</span>)]<span class="pl-k">$</span><span class="pl-smi">classe</span>, <span class="pl-smi">pml_pr</span>)<span class="pl-k">$</span><span class="pl-smi">overall</span>[<span class="pl-c1">1</span>])
+<span class="pl-smi">error</span>
+
+</pre></div>
+
+<p>The accuracy and the out of sample error are, again, satisfying, therefore we generate the predictions on the orginal Test set (which will be separately uploaded and submitted).</p>
+
+<div class="highlight highlight-r"><pre><span class="pl-smi">answers</span> <span class="pl-k">&lt;-</span> predict(<span class="pl-smi">pml_rf</span>, <span class="pl-smi">finalTest</span>)
+<span class="pl-smi">answers</span></pre></div>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/fabvene/Coursera-PML-Final_Project">Coursera-pml-final project</a> is maintained by <a href="https://github.com/fabvene">fabvene</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
+
