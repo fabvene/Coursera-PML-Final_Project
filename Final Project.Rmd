@@ -26,19 +26,20 @@ testUrl <- read.csv("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-test
 
 ```{r CleanUp}
 
-names(trainUrl)
-
+# names(trainUrl)
+# 
 training <- trainUrl[,c(8:160)]
-
-names(testUrl)
-
-tests20 <- testUrl[,c(8:160)]
-
-
+classe <- training$classe
+training <- training[, sapply(training, is.numeric)]
 training <- training[, colSums(is.na(training)) == 0] 
-tests20 <- tests20[, colSums(is.na(tests20)) == 0] 
 
-#training <- na.omit(training)
+training <- cbind(training,classe)
+
+finalTest <- testUrl[,c(8:160)]
+finalTest <- finalTest[,sapply(finalTest, is.numeric)]
+finalTest <- finalTest[, colSums(is.na(finalTest)) == 0] 
+
+
 
 ```
 
@@ -51,35 +52,24 @@ rattle()
 
 ```
 
+```{r}
 
-
-```{r ModelFit}
-library(caret)
-library(ParallelForest)
-
-
-set.seed(1234) 
-inTrain <- createDataPartition(training$classe, p=0.80, list=F)
-trainData <- training[inTrain, ]
-testData <- training[-inTrain, ]
-
-modFit <- train(classe~.,data=trainData, method="rf", trControl = trainControl(method = "cv"), ntree=200)
-
-
-
-```
-
-
-```{r Predict}
-
-predictions <- predict(modFit, testData)
-confusionMatrix(testData$classe, predictions)
-
-accuracy <- postResample(predictions, testData$classe)
+accuracy <- postResample(pml_pr, pml_dataset[pml_test, c(pml_input, pml_target)]$classe)
 accuracy
-
-oose <- 1 - as.numeric(confusionMatrix(testData$classe, predictions)$overall[1])
+oose <- 1 - as.numeric(confusionMatrix(pml_dataset[pml_test, c(pml_input, pml_target)]$classe, pml_pr)$overall[1])
 oose
 
+mycols <- c(pml_input,pml_target)
+
+finalTest <- testUrl[mycols]
+
+result <- predict(pml_rf, finalTest)
+result
+
 ```
+
+
+
+
+
 
